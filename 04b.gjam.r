@@ -30,7 +30,7 @@ effort <- list(columns=1:ncol(y), values = x$effMin)
 
 #### make censor list
 # censor
-censor <- 30
+censor <- 50
 y[y > censor] <- censor
 
 
