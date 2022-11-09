@@ -70,10 +70,7 @@ source("CODE/01d.BBSobservers.r")
 
 source("CODE/02a.eBirdFilter.r")
 
-# This script first reformats eBird data by state for use in 02b (expertise).
-# It then reformats eBird data and saves by year for use in 02c (aggregation).
-
-
+# This script filters the raw eBird data
 
 
 #### --------aggregate checklists to BBS routes-------- ####
