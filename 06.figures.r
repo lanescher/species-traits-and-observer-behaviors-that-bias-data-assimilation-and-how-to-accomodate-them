@@ -7,6 +7,7 @@
 # This script produces final figures
 
 library(ggpubr)
+library(tidyverse)
 
 
 # format beta table from gjam output
@@ -103,7 +104,8 @@ bcr5 <- BCR %>%
          ID %in% c('washington', 'oregon'))
 
 a <- ggplot() +
-  geom_polygon(data = states, aes(x = long, y = lat, group = group), fill = "gray97", color = "black") +
+  geom_polygon(data = states, aes(x = long, y = lat, group = group), 
+               size = 0.1, fill = "gray97", color = "black") +
   geom_sf(data = us_sf, color = "gray20", fill = NA) +
   scale_fill_identity(guide = "legend",
                       labels = c("Southeast", "Pacific Northwest", "Central Plains"),
@@ -150,7 +152,9 @@ countsAll <- countsM[which(countsM$variable %in% c("BBSall", "EBIall")),]
 fig1base <- ggplot() +
   theme_bw() +
   theme(panel.grid = element_blank(),
-        axis.ticks = element_blank()) +
+        axis.ticks = element_blank(),
+        axis.text = element_text(size = 7),
+        axis.title = element_text(size = 8)) +
   scale_x_continuous(breaks = c(2010, 2012, 2014, 2016, 2018)) +
   scale_color_manual(values = c(colors[2], colors[3], colors[1]),
                      name = "Region", 
@@ -174,18 +178,19 @@ b <- fig1base +
                 y = value,
                 color = region,
                 linetype = variable),
-            size = 1.5) +
+            linewidth = 0.5) +
   scale_y_continuous(name = "BBS point counts",
                      sec.axis = sec_axis(trans = ~./3, name = "eBird checklists")) +
   coord_cartesian(ylim = c(0, 2000)) +
   theme(legend.position = "none")
 
 
-fig1 <- ggarrange(a, b, ncol = 2,
-                  labels = c("a", "b"))
+fig1 <- ggarrange(a, b, ncol = 1,
+                  labels = c("a", "b"),
+                  font.label = list(size = 10))
 
-ggsave(fig1, file = "OUT/figures/fig1.jpg",
-       height = 4, width = 12)
+ggsave(fig1, file = "OUT/figures/fig1.tiff",
+       height = 10, width = 8.5, dpi = 600, units = "cm")
 
 ############################################
 #                                          #
@@ -201,9 +206,9 @@ source("CODE/04a.gjamPrep.r")
 
 load(paste0("OUT/", region, "-traitdata.rdata"))
 
-load(paste0("OUT/gjamOutput/0.05-", region, "_obs_plat-1-30000-censor50.rdata"))
+load(paste0("OUT/gjamOutput/0.05-", region, "_plat-1-20000-censor50.rdata"))
 
-# #### get observer effect ####
+# #### get platform effect ####
 spObs <- makeBetas(out)$stand %>%
   filter(predictor == "platformEBI")
 
@@ -216,8 +221,8 @@ spObs <- merge(spObs, traits, by.x = "species", by.y = "bird")
 pointSize <- 1.3
 errorBarSize <- 0.4
 errorBarWidth <- 0.5
-x.text <- 3.5
-y.lab <- 3.2
+x.text <- 8 / (14/5)
+y.lab <- 8 / (14/5)
 
 fig2Base <- ggplot() +
   theme_bw() +
@@ -278,7 +283,9 @@ a <- fig2Base +
   theme(plot.margin = margin(t = 0.5,
                              r = 1,
                              b = 2,
-                             l = 0.5, 'cm'))
+                             l = 0.5, 'cm'),
+        axis.text = element_text(size = 7),
+        axis.title = element_text(size = 8))
 
 
 
@@ -335,17 +342,20 @@ b <- fig2Base +
   theme(plot.margin = margin(t = 0.5,
                              r = 1,
                              b = 2,
-                             l = 0.5, 'cm'))
+                             l = 0.5, 'cm'),
+        axis.text = element_text(size = 7),
+        axis.title = element_text(size = 8))
 
 
 #### TOGETHER
 
 fig2 <- ggarrange(a, b, 
           nrow = 1, ncol = 2,
-          labels = c("a", "b"))
+          labels = c("a", "b"),
+          font.label = list(size = 10))
 
-ggsave(fig2, filename = "OUT/figures/fig2.jpg",
-       height = 10, width = 7.5)
+ggsave(fig2, filename = "OUT/figures/fig2.tiff",
+       height = 20, width = 18, units = "cm")
 
 
 
@@ -385,7 +395,7 @@ all.cors1 <- all.cors %>%
                                 T ~ "dark"))
 
 
-# full figure goes in the appendix
+# full figure
 ggplot(all.cors1) +
   geom_point(aes(x = Region, y = Trait, fill = value), size = 20, shape = 22) +
   geom_text(aes(x = Region, y = Trait, label = Value, color = text.color), hjust = 0.5, vjust = 0.5, show.legend = F) +
@@ -397,6 +407,7 @@ ggplot(all.cors1) +
         panel.grid = element_blank(),
         axis.ticks = element_blank(),
         axis.text.x = element_text(angle = 90, hjust = 1))
+
 ggsave(file = "OUT/figures/allcorrelations.jpg", height = 8, width = 10)
 
 
@@ -407,31 +418,36 @@ labs <- data.frame(lab = c("a", "b"),
                    x = 2,
                    y = 5,
                    Pred = c("Platform", "Sunrise"))
+corlab <- 6 / (14/5)
 
 
 plat <- all.cors1 %>%
-  filter(model %in% c("obsplat"),
+  filter(model %in% c("plat"),
          Pred == "Platform") %>%
   ggplot() +
-  geom_point(aes(x = Region, y = Trait, fill = value), size = 20, shape = 22) +
-  geom_text(aes(x = Region, y = Trait, label = Value, color = text.color), hjust = 0.5, vjust = 0.5, show.legend = F) +
+  geom_tile(aes(x = Region, y = Trait, fill = value)) +
+  geom_text(aes(x = Region, y = Trait, label = Value, color = text.color), 
+            hjust = 0.5, vjust = 0.5, show.legend = F, size = corlab) +
   facet_wrap(~Pred, nrow = 1) +
-  scale_fill_gradient2(high = "darkblue", low = "red4", mid = "white", name = "Correlation") +
+  scale_fill_gradient2(high = "darkblue", low = "red4", mid = "white", name = "Correlation",
+                       guide = "none") +
   scale_color_manual(values = c('gray10', 'gray90')) +
   theme_bw() +
   theme(strip.background = element_blank(),
         panel.grid = element_blank(),
         axis.ticks = element_blank(),
-        axis.text.x = element_text(angle = 90, hjust = 1)) +
+        axis.text.x = element_text(angle = 90, hjust = 1, size = 7),
+        axis.text.y = element_text(size = 7)) +
   labs(x = '', y = "") +
   coord_cartesian(clip = "off")
 
 sunrise <- all.cors1 %>%
-  filter(model %in% c("obsplat"),
+  filter(model %in% c("plat"),
          Pred == "Sunrise") %>%
   ggplot() +
-  geom_point(aes(x = Region, y = Trait, fill = value), size = 20, shape = 22) +
-  geom_text(aes(x = Region, y = Trait, label = Value, color = text.color), hjust = 0.5, vjust = 0.5, show.legend = F) +
+  geom_tile(aes(x = Region, y = Trait, fill = value)) +
+  geom_text(aes(x = Region, y = Trait, label = Value, color = text.color), 
+            hjust = 0.5, vjust = 0.5, show.legend = F, size = corlab) +
   facet_wrap(~Pred, nrow = 1) +
   scale_fill_gradient2(high = "darkblue", low = "red4", mid = "white", name = "Correlation") +
   scale_color_manual(values = c('gray10', 'gray90')) +
@@ -439,29 +455,35 @@ sunrise <- all.cors1 %>%
   theme(strip.background = element_blank(),
         panel.grid = element_blank(),
         axis.ticks = element_blank(),
-        axis.text.x = element_text(angle = 90, hjust = 1),
-        axis.text.y = element_blank()) +
+        axis.text.x = element_text(angle = 90, hjust = 1, size = 7),
+        axis.text.y = element_blank(),
+        legend.title = element_text(size = 7),
+        legend.text = element_text(size = 6),
+        legend.key.height = unit(.3, 'cm'),
+        legend.key.width = unit(0.5, 'cm'),
+        legend.title.align = 0.5,
+        legend.box = "horizontal") +
   labs(x = '', y = "") + 
-  coord_cartesian(clip = "off")
+  coord_cartesian(clip = "off") +
+  guides(fill = guide_colorbar(title.position = "top"))
 
-ggarrange(egg::tag_facet_outside(plat, tag_pool = "a"), 
-          nrow = 1, ncol = 2,
-          \legend = "right", common.legend = T)
+tagsize <- 10 / (14/5)
 
 a <- egg::tag_facet(plat, open = "", close = "",
                     hjust = 2, vjust = -0.4,
-                    tag_pool = "a")
+                    tag_pool = "a", size = tagsize)
 b <- egg::tag_facet(sunrise, open = "", close = "",
                     hjust = 2, vjust = -0.4,
-                    tag_pool = "b")
+                    tag_pool = "b", size = tagsize)
 
-ggarrange(a, b, nrow = 1, 
-          legend = "right", common.legend = T,
-          widths = c(1.68,1))+
-  theme(plot.margin = margin(1,0,0,0, "cm")) 
+library(patchwork)
+a + b +
+  plot_layout(guides = "collect") & theme(legend.position = "bottom",
+                                          plot.margin = margin(0.3, 0.1, 0, 0, unit = "cm"),
+                                          legend.margin = margin(-0.7, 0, 0, 0, unit = "cm"))
 
-
-ggsave(file = "OUT/figures/fig3.jpg", height = 4.6, width = 6.2)
+ggsave(file = "OUT/figures/fig3.tiff", height = 8, width = 8.5,
+       units = "cm", dpi = 600)
 
 
 
@@ -482,7 +504,7 @@ regs <- c("SE", "MW", "PN")
 
 obsEff <- list()
 for (r in 1:length(regs)) {
-  load(paste0("OUT/gjamOutput/", propObs, "-",  regs[r], "_obs_plat-1-30000-censor50.rdata"))
+  load(paste0("OUT/gjamOutput/", propObs, "-",  regs[r], "_plat-1-20000-censor50.rdata"))
   plat <- makeBetas(out)$stand %>%
     filter(predictor == "platformEBI")
   
@@ -525,6 +547,8 @@ lab.df <- data.frame(x = c(1.8, 1.8),
                                "reported more \nin BBS"),
                      Region = "Pacific")
 
+labsize <- 6 / (14/5)
+
 fig3a <- ggplot(obsEff1) +
   geom_hline(yintercept = 0, color = "gray50") +
   geom_boxplot(aes(x = bins,
@@ -535,16 +559,18 @@ fig3a <- ggplot(obsEff1) +
   theme(panel.grid = element_blank(),
         axis.ticks.x = element_blank(),
         axis.text.x = element_blank(),
+        axis.text.y = element_text(size = 7),
         strip.background = element_blank(),
-        strip.text.x = element_text(size = 11)) +
+        strip.text.x = element_text(size = 8),
+        axis.title = element_text(size = 8)) +
   labs(x = "Commonness", y = "Platform effect",
        color = "Species") +
   geom_text(aes(x = 2.5, y = -0.6),
             label = "rare",
-            size = 3.5) +
+            size = labsize) +
   geom_text(aes(x = 10, y = -0.6),
             label = "common", 
-            size = 3.5) +
+            size = labsize) +
   facet_wrap(~factor(Region,
                      levels = c("Pacific",
                                 "Plains",
@@ -557,7 +583,7 @@ fig3a <- ggplot(obsEff1) +
   geom_text(data = lab.df,
             aes(x = x, y = y, label = label),
             angle = 90,
-            size = y.lab)
+            size = labsize)
 
 obsEff1$bins1 <- cut(obsEff1$percentVisDet, breaks = 12)
 
@@ -570,17 +596,19 @@ fig3b <- ggplot(obsEff1) +
   theme_bw() +
   theme(panel.grid = element_blank(),
         axis.ticks.x = element_blank(),
+        axis.text.y = element_text(size = 7),
         axis.text.x = element_blank(),
         strip.background = element_blank(),
-        strip.text.x = element_text(size = 11)) +
+        strip.text.x = element_text(size = 8),
+        axis.title = element_text(size = 8)) +
   labs(x = "Typical detection method", y = "Platform effect",
        color = "Species") +
   geom_text(aes(x = 2.5, y = -0.58),
             label = "detected\nby sound",
-            size = 3.5) +
+            size = labsize) +
   geom_text(aes(x = 10, y = -0.58),
             label = "detected\nby sight", 
-            size = 3.5) +
+            size = labsize) +
   facet_wrap(~factor(Region,
                      levels = c("Pacific",
                                 "Plains",
@@ -593,15 +621,16 @@ fig3b <- ggplot(obsEff1) +
   geom_text(data = lab.df,
             aes(x = x, y = y, label = label),
             angle = 90,
-            size = y.lab)
+            size = labsize)
 
 fig3 <- ggarrange(fig3a, fig3b,
                   nrow = 2, ncol = 1,
-                  labels = c("a", "b"))
+                  labels = c("a", "b"),
+                  font.label = list(size = 10))
 
 
-ggsave(fig3, filename = "OUT/figures/fig4.jpg",
-       height = 8, width = 8.5)
+ggsave(fig3, filename = "OUT/figures/fig4.tiff",
+       height = 14, width = 18, units = "cm", dpi = 600)
 
 
 
